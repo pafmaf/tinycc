@@ -1,7 +1,7 @@
 /* ----------------------------------------------------------------------- */
-#if C2STR
-
 /* with -D C2STR: convert tccdefs.h to C-strings */
+
+#if C2STR
 
 #include <stdio.h>
 #include <string.h>
@@ -21,6 +21,8 @@ const char *platform_macros[] = {
     "__OpenBSD__",          "TARGETOS_OpenBSD",
     "__NetBSD__",           "TARGETOS_NetBSD",
     "__linux__",            "TARGETOS_Linux",
+    "__ANDROID__",          "TARGETOS_ANDROID",
+
     "__SIZEOF_POINTER__",   "PTR_SIZE",
     "__SIZEOF_LONG__",      "LONG_SIZE",
     0
@@ -164,14 +166,16 @@ int main(int argc, char **argv)
 }
 
 /* ----------------------------------------------------------------------- */
-#elif 1
-
 /* get some information from the host compiler for configure */
+
+#elif 1
 
 #include <stdio.h>
 
 #if defined(_WIN32)
 #include <fcntl.h>
+#include <io.h>
+int _CRT_glob = 0;
 #endif
 
 /* Define architecture */
@@ -206,15 +210,21 @@ int main(int argc, char **argv)
 # define TRIPLET_OS "unknown"
 #endif
 
+#if defined __ANDROID__
+# define ABI_PREFIX "android"
+#else
+# define ABI_PREFIX "gnu"
+#endif
+
 /* Define calling convention and ABI */
 #if defined (__ARM_EABI__)
 # if defined (__ARM_PCS_VFP)
-#  define TRIPLET_ABI "gnueabihf"
+#  define TRIPLET_ABI ABI_PREFIX"eabihf"
 # else
-#  define TRIPLET_ABI "gnueabi"
+#  define TRIPLET_ABI ABI_PREFIX"eabi"
 # endif
 #else
-# define TRIPLET_ABI "gnu"
+# define TRIPLET_ABI ABI_PREFIX
 #endif
 
 #if defined _WIN32
@@ -223,10 +233,6 @@ int main(int argc, char **argv)
 # define TRIPLET TRIPLET_ARCH "-" TRIPLET_ABI
 #else
 # define TRIPLET TRIPLET_ARCH "-" TRIPLET_OS "-" TRIPLET_ABI
-#endif
-
-#if defined(_WIN32)
-int _CRT_glob = 0;
 #endif
 
 int main(int argc, char *argv[])

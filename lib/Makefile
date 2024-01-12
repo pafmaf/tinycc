@@ -14,6 +14,7 @@ XAR = $(XTCC) -ar
 XFLAGS-unx = -B$(TOPSRC)
 XFLAGS-win = -B$(TOPSRC)/win32 -I$(TOPSRC)/include
 XFLAGS = $(XFLAGS$(XCFG)) -I$(TOP)
+BFLAGS = -bt
 XCFG = $(or $(findstring -win,$T),-unx)
 S = $(if $(findstring yes,$(SILENT)),@$(info * $@))
 
@@ -27,7 +28,8 @@ arm-libtcc1-usegcc ?= no
 ifeq "$($(T)-libtcc1-usegcc)" "yes"
  XCC = $(CC)
  XAR = $(AR)
- XFLAGS = $(CFLAGS) -fPIC -gstabs -fno-omit-frame-pointer -Wno-unused-function -Wno-unused-variable
+ XFLAGS = $(CFLAGS) -fPIC -gdwarf -fno-omit-frame-pointer -Wno-unused-function -Wno-unused-variable
+ BFLAGS = -g
 endif
 
 ifneq ($(CONFIG_backtrace),no)
@@ -42,11 +44,11 @@ $(X)BT_O += tcov.o
 
 DSO_O = dsohandle.o
 
-I386_O = libtcc1.o alloca.o alloca-bt.o $(BT_O) stdatomic.o
-X86_64_O = libtcc1.o alloca.o alloca-bt.o $(BT_O) stdatomic.o
-ARM_O = libtcc1.o armeabi.o alloca.o armflush.o fetch_and_add.o $(BT_O)
-ARM64_O = lib-arm64.o fetch_and_add.o $(BT_O)
-RISCV64_O = lib-arm64.o fetch_and_add.o $(BT_O)
+I386_O = libtcc1.o alloca.o alloca-bt.o stdatomic.o atomic.o builtin.o $(BT_O)
+X86_64_O = libtcc1.o alloca.o alloca-bt.o stdatomic.o atomic.o builtin.o $(BT_O)
+ARM_O = libtcc1.o armeabi.o alloca.o armflush.o stdatomic.o atomic.o builtin.o $(BT_O)
+ARM64_O = lib-arm64.o stdatomic.o atomic.o builtin.o $(BT_O)
+RISCV64_O = lib-arm64.o stdatomic.o atomic.o builtin.o $(BT_O)
 WIN_O = crt1.o crt1w.o wincrt1.o wincrt1w.o dllcrt1.o dllmain.o
 
 OBJ-i386 = $(I386_O) $(BCHECK_O) $(DSO_O)
@@ -55,7 +57,7 @@ OBJ-x86_64-osx = $(X86_64_O) va_list.o $(BCHECK_O)
 OBJ-i386-win32 = $(I386_O) chkstk.o $(B_O) $(WIN_O)
 OBJ-x86_64-win32 = $(X86_64_O) chkstk.o $(B_O) $(WIN_O)
 OBJ-arm64 = $(ARM64_O) $(BCHECK_O) $(DSO_O)
-OBJ-arm64-osx = $(ARM64_O) va_list.o
+OBJ-arm64-osx = $(ARM64_O) $(BCHECK_O)
 OBJ-arm = $(ARM_O) $(BCHECK_O) $(DSO_O)
 OBJ-arm-fpa = $(ARM_O) $(DSO_O)
 OBJ-arm-fpa-ld = $(ARM_O) $(DSO_O)
@@ -84,7 +86,7 @@ $(X)%.o : %.S
 $(TOP)/%.o : %.c
 	$S$(XCC) -c $< -o $@ $(XFLAGS)
 
-$(TOP)/bcheck.o : XFLAGS += -g $(if $(CONFIG_musl),-DTCC_MUSL)
+$(TOP)/bcheck.o : XFLAGS += $(BFLAGS) $(if $(CONFIG_musl),-DTCC_MUSL)
 $(TOP)/bt-exe.o : $(TOP)/tccrun.c
 
 $(X)crt1w.o : crt1.c

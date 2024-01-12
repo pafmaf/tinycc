@@ -88,6 +88,37 @@ void tst_cast(void)
   printf ("schar to ushort cast: %x\n", r);
 }
 
+struct {
+    int (*print)(const char *format, ...);
+} tst_indir = {
+    printf
+};
+
+void tst_indir_func(void)
+{
+    tst_indir.print("tst_indir_func %d\n", 10);
+}
+
+struct V {
+  int x, y, z;
+};
+
+struct V vec(void)
+{
+  return (struct V) { 1, 2, 3 };
+}
+
+void func(float f, struct V v)
+{
+  printf("%g\n", f);
+}
+
+void tst_struct_return_align(void)
+{
+  float d = 5.0f;
+  func(d, vec());
+}
+
 int
 main (void)
 {
@@ -105,4 +136,6 @@ main (void)
   tst_compare();
   tst_pack();
   tst_cast();
+  tst_indir_func();
+  tst_struct_return_align();
 }

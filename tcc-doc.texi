@@ -350,10 +350,13 @@ Debugger options:
 
 @table @option
 @item -g
-Generate run time debug information so that you get clear run time
+Generate run time stab debug information so that you get clear run time
 error messages: @code{ test.c:68: in function 'test5()': dereferencing
 invalid pointer} instead of the laconic @code{Segmentation
 fault}.
+
+@item -gdwarf[-x]
+Generate run time dwarf debug information instead of stab debug information.
 
 @item -b
 Generate additional support code to check memory allocations and array/pointer
@@ -361,10 +364,11 @@ bounds (@pxref{Bounds}). @option{-g} is implied.
 
 @item -bt[N]
 Display N callers in stack traces. This is useful with @option{-g} or @option{-b}.
-With executables, additional support for stack traces is included.
+When activated, @code{__TCC_BACKTRACE__} is defined.
 
-A function @code{ int tcc_backtrace(const char *fmt, ...); } is provided
-to trigger a stack trace with a message on demand.
+With executables, additional support for stack traces is included. A function
+    @code{ int tcc_backtrace(const char *fmt, ...); }
+is provided to trigger a stack trace with a message on demand.
 
 @end table
 
@@ -934,7 +938,7 @@ Here are some examples of caught errors:
 @end example
 @end table
 
-TCC defines @code{__BOUNDS_CHECKING_ON} if activated.
+TCC defines @code{__TCC_BCHECK__} if activated.
 
 There are five environment variables that can be used to control the behavior:
 @itemize
@@ -981,7 +985,7 @@ for bounds checking errors.
 @end itemize
 
 @example
-#if defined(__TINYC__) && __BOUNDS_CHECKING_ON
+#ifdef __TCC_BCHECK__
 extern void __bounds_checking (int x);
 # define BOUNDS_CHECKING_OFF __bounds_checking(1)
 # define BOUNDS_CHECKING_ON  __bounds_checking(-1)

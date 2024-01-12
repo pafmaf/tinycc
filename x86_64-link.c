@@ -22,7 +22,7 @@
 
 #include "tcc.h"
 
-#if !defined(ELF_OBJ_ONLY) || defined(TCC_TARGET_MACHO)
+#ifdef NEED_RELOC_TYPE
 /* Returns 1 for a code relocation, 0 for a data relocation. For unknown
    relocations, returns -1. */
 int code_reloc (int reloc_type)
@@ -47,6 +47,8 @@ int code_reloc (int reloc_type)
         case R_X86_64_TLSLD:
         case R_X86_64_DTPOFF32:
         case R_X86_64_TPOFF32:
+        case R_X86_64_DTPOFF64:
+        case R_X86_64_TPOFF64:
             return 0;
 
         case R_X86_64_PC32:
@@ -95,6 +97,8 @@ int gotplt_entry_type (int reloc_type)
         case R_X86_64_TLSLD:
         case R_X86_64_DTPOFF32:
         case R_X86_64_TPOFF32:
+        case R_X86_64_DTPOFF64:
+        case R_X86_64_TPOFF64:
         case R_X86_64_REX_GOTPCRELX:
         case R_X86_64_PLT32:
         case R_X86_64_PLTOFF64:
@@ -104,7 +108,7 @@ int gotplt_entry_type (int reloc_type)
     return -1;
 }
 
-#if !defined(TCC_TARGET_MACHO) || defined TCC_IS_NATIVE
+#ifdef NEED_BUILD_GOT
 ST_FUNC unsigned create_plt_entry(TCCState *s1, unsigned got_offset, struct sym_attr *attr)
 {
     Section *plt = s1->plt;
@@ -190,7 +194,7 @@ void relocate(TCCState *s1, ElfW_Rel *rel, int type, unsigned char *ptr, addr_t 
 
     switch (type) {
         case R_X86_64_64:
-            if (s1->output_type == TCC_OUTPUT_DLL) {
+            if (s1->output_type & TCC_OUTPUT_DYN) {
                 esym_index = get_sym_attr(s1, sym_index, 0)->dyn_index;
                 qrel->r_offset = rel->r_offset;
                 if (esym_index) {
@@ -208,7 +212,7 @@ void relocate(TCCState *s1, ElfW_Rel *rel, int type, unsigned char *ptr, addr_t 
             break;
         case R_X86_64_32:
         case R_X86_64_32S:
-            if (s1->output_type == TCC_OUTPUT_DLL) {
+            if (s1->output_type & TCC_OUTPUT_DYN) {
                 /* XXX: this logic may depend on TCC's codegen
                    now TCC uses R_X86_64_32 even for a 64bit pointer */
                 qrel->r_offset = rel->r_offset;
@@ -243,7 +247,11 @@ void relocate(TCCState *s1, ElfW_Rel *rel, int type, unsigned char *ptr, addr_t 
             long long diff;
             diff = (long long)val - addr;
             if (diff < -2147483648LL || diff > 2147483647LL) {
-                tcc_error("internal error: relocation failed");
+#ifdef TCC_TARGET_PE
+              /* ignore overflow with undefined weak symbols */
+              if (((ElfW(Sym)*)symtab_section->data)[sym_index].st_shndx != SHN_UNDEF)
+#endif
+                tcc_error_noabort("internal error: relocation failed");
             }
             add32le(ptr, diff);
         }
@@ -328,7 +336,7 @@ void relocate(TCCState *s1, ElfW_Rel *rel, int type, unsigned char *ptr, addr_t 
                     add32le(ptr + 8, x);
                 }
                 else
-                    tcc_error("unexpected R_X86_64_TLSGD pattern");
+                    tcc_error_noabort("unexpected R_X86_64_TLSGD pattern");
             }
             break;
         case R_X86_64_TLSLD:
@@ -348,7 +356,7 @@ void relocate(TCCState *s1, ElfW_Rel *rel, int type, unsigned char *ptr, addr_t 
                     rel[1].r_info = ELFW(R_INFO)(0, R_X86_64_NONE);
                 }
                 else
-                    tcc_error("unexpected R_X86_64_TLSLD pattern");
+                    tcc_error_noabort("unexpected R_X86_64_TLSLD pattern");
             }
             break;
         case R_X86_64_DTPOFF32:
@@ -362,6 +370,19 @@ void relocate(TCCState *s1, ElfW_Rel *rel, int type, unsigned char *ptr, addr_t 
                 sec = s1->sections[sym->st_shndx];
                 x = val - sec->sh_addr - sec->data_offset;
                 add32le(ptr, x);
+            }
+            break;
+        case R_X86_64_DTPOFF64:
+        case R_X86_64_TPOFF64:
+            {
+                ElfW(Sym) *sym;
+                Section *sec;
+                int32_t x;
+
+                sym = &((ElfW(Sym) *)symtab_section->data)[sym_index];
+                sec = s1->sections[sym->st_shndx];
+                x = val - sec->sh_addr - sec->data_offset;
+                add64le(ptr, x);
             }
             break;
         case R_X86_64_NONE:

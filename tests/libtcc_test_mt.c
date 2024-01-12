@@ -209,9 +209,8 @@ TF_TYPE(thread_test_complex, vn)
     sleep_ms(2);
     ret = tcc_add_file(s, argv[0]);
     sleep_ms(3);
-    if (ret < 0)
-        exit(1);
-    tcc_run(s, argc, argv);
+    if (ret == 0)
+        tcc_run(s, argc, argv);
     tcc_delete(s);
     fflush(stdout);
     return 0;
@@ -288,6 +287,9 @@ int main(int argc, char **argv)
 
 #else
 #include <tcclib.h>
+
+unsigned int sleep(unsigned int seconds);
+
 int fib(n)
 {
     return (n <= 2) ? 1 : fib(n-1) + fib(n-2);
@@ -295,7 +297,8 @@ int fib(n)
 
 int main(int argc, char **argv)
 {
-    printf(" %d", fib(atoi(argv[1]), 2));
+    sleep(1);
+    printf(" %d", fib(atoi(argv[1])));
     return 0;
 }
 #endif
