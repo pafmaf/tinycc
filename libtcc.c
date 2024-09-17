@@ -892,6 +892,8 @@ LIBTCCAPI void tcc_delete(TCCState *s1)
     tcc_free(s1->deps_outfile);
 #if defined TCC_TARGET_MACHO
     tcc_free(s1->install_name);
+    dynarray_reset(&s1->framework_names, &s1->nb_framework_names);
+    dynarray_reset(&s1->framework_search_paths, &s1->nb_framework_search_paths);
 #endif
     dynarray_reset(&s1->files, &s1->nb_files);
     dynarray_reset(&s1->target_deps, &s1->nb_target_deps);
@@ -1598,6 +1600,7 @@ enum {
     TCC_OPTION_mfloat_abi,
     TCC_OPTION_m,
     TCC_OPTION_f,
+    TCC_OPTION_framework,
     TCC_OPTION_isystem,
     TCC_OPTION_iwithprefix,
     TCC_OPTION_include,
@@ -1682,6 +1685,7 @@ static const TCCOption tcc_options[] = {
     { "m", TCC_OPTION_m, TCC_OPTION_HAS_ARG | TCC_OPTION_NOSEP },
 #ifdef TCC_TARGET_MACHO
     { "flat_namespace", TCC_OPTION_flat_namespace, 0 },
+    { "framework", TCC_OPTION_framework, TCC_OPTION_HAS_ARG },
 #endif
     { "f", TCC_OPTION_f, TCC_OPTION_HAS_ARG | TCC_OPTION_NOSEP },
     { "isystem", TCC_OPTION_isystem, TCC_OPTION_HAS_ARG },
@@ -2040,6 +2044,9 @@ dorun:
             s->option_r = 1;
             x = TCC_OUTPUT_OBJ;
             goto set_output_type;
+        case TCC_OPTION_framework:
+            dynarray_add(&s->framework_names, &s->nb_framework_names, tcc_strdup(optarg));
+            break;
         case TCC_OPTION_isystem:
             tcc_add_sysinclude_path(s, optarg);
             break;

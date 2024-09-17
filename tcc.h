@@ -1024,6 +1024,17 @@ struct TCCState {
     int argc;
     char **argv;
     CString linker_arg; /* collect -Wl options */
+
+#ifdef TCC_TARGET_MACHO
+    /* darwin framework names */
+    char **framework_names;
+    int nb_framework_names;
+
+    /* darwin framework paths */
+    char **framework_search_paths;
+    int nb_framework_search_paths;
+#endif
+
 };
 
 struct filespec {
@@ -1774,6 +1785,7 @@ ST_FUNC int macho_load_dll(TCCState *s1, int fd, const char *filename, int lev);
 ST_FUNC int macho_load_tbd(TCCState *s1, int fd, const char *filename, int lev);
 #ifdef TCC_IS_NATIVE
 ST_FUNC void tcc_add_macos_sdkpath(TCCState* s);
+ST_FUNC char* tcc_search_darwin_framework(TCCState* s, const char* include_name);
 ST_FUNC const char* macho_tbd_soname(const char* filename);
 #endif
 #endif
