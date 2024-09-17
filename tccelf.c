@@ -1049,7 +1049,13 @@ ST_FUNC void relocate_syms(TCCState *s1, Section *symtab, int do_resolve)
             if (do_resolve) {
 #if defined TCC_IS_NATIVE && !defined TCC_TARGET_PE
                 /* dlsym() needs the undecorated name.  */
-                void *addr = dlsym(RTLD_DEFAULT, &name[s1->leading_underscore]);
+                void *addr = dlsym(RTLD_SELF, &name[s1->leading_underscore]);
+#ifdef TCC_TARGET_MACHO
+                // System frameworks might need RTLD_DEFAULT on macOS.
+                if (addr == NULL) {
+                    addr = dlsym(RTLD_DEFAULT, &name[s1->leading_underscore]);
+                }
+#endif
 #if TARGETOS_OpenBSD || TARGETOS_FreeBSD || TARGETOS_NetBSD || TARGETOS_ANDROID
 		if (addr == NULL) {
 		    int i;
