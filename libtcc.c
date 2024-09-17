@@ -2045,7 +2045,9 @@ dorun:
             x = TCC_OUTPUT_OBJ;
             goto set_output_type;
         case TCC_OPTION_framework:
+#ifdef TCC_TARGET_MACHO
             dynarray_add(&s->framework_names, &s->nb_framework_names, tcc_strdup(optarg));
+#endif
             break;
         case TCC_OPTION_isystem:
             tcc_add_sysinclude_path(s, optarg);
