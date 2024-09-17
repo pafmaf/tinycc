@@ -4393,6 +4393,9 @@ do_decl:
                     tcc_error("redefinition of enumerator '%s'",
                               get_tok_str(v, NULL));
                 next();
+                if (tok == TOK_ATTRIBUTE1 || tok == TOK_ATTRIBUTE2) {
+                    parse_attribute(&ad1);
+                }
                 if (tok == '=') {
                     next();
 		    ll = expr_const64();
