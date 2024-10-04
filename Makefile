@@ -64,7 +64,7 @@ else
  ifdef CONFIG_OSX
   NATIVE_TARGET = $(ARCH)-osx
   ifneq ($(CC_NAME),tcc)
-    LDFLAGS += -flat_namespace -undefined warning
+    LDFLAGS += -flat_namespace
   endif
   export MACOSX_DEPLOYMENT_TARGET := 10.6
  endif

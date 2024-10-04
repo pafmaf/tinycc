@@ -25,6 +25,12 @@
 #define _DARWIN_C_SOURCE
 #include "config.h"
 
+#ifdef __APPLE__
+    #ifdef __aarch64__
+        #define _Float16 float
+    #endif
+#endif
+
 #include <stdarg.h>
 #include <stdlib.h>
 #include <stdio.h>
